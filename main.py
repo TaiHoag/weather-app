@@ -1,11 +1,18 @@
 from api_call import fetch_weather_data
 from database import store_hourly_data, store_daily_data
 from visualization import visualize_hourly_temperature
+from city import get_city_coordinates
 import pandas as pd
 
 def main():
+
+    # Get city coordinates
+    latitude, longitude = get_city_coordinates()
+    if latitude is None or longitude is None:
+        return
+
     # Fetch weather data
-    response = fetch_weather_data()
+    response = fetch_weather_data(latitude, longitude)
 
     # Process hourly data
     hourly = response.Hourly()

@@ -3,7 +3,7 @@ import requests_cache
 import pandas as pd
 from retry_requests import retry
 
-def fetch_weather_data():
+def fetch_weather_data(latitude, longitude,):
     # Setup the Open-Meteo API client with cache and retry on error
     cache_session = requests_cache.CachedSession('.cache', expire_after=3600)
     retry_session = retry(cache_session, retries=5, backoff_factor=0.2)
@@ -13,8 +13,8 @@ def fetch_weather_data():
     # The order of variables in hourly or daily is important to assign them correctly below
     url = "https://api.open-meteo.com/v1/forecast"
     params = {
-        "latitude": 10.823,
-        "longitude": 106.6296,
+        "latitude": latitude,
+        "longitude": longitude,
         "hourly": ["temperature_2m", "relative_humidity_2m", "precipitation", "rain", "cloud_cover"],
         "daily": "uv_index_max",
         "timezone": "auto",
