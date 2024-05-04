@@ -18,6 +18,7 @@ def display_weather_info():
 
     # Display weather information in the text widget
     weather_text.delete(1.0, tk.END) # Clear previous fetch result
+    weather_text.insert(tk.END, f"City Name {city_name}\n")
     weather_text.insert(tk.END, f"Coordinates: {latitude}°N, {longitude}°E\n\n")
     weather_text.insert(tk.END, f"Elevation: {response.Elevation()} m asl\n")
     weather_text.insert(tk.END, f"Timezone: {response.Timezone()} {response.TimezoneAbbreviation()}\n")
@@ -49,6 +50,7 @@ def process_hourly_data(response):
             inclusive="left"
         )
     }
+    hourly_data["city_name"] = city_entry.get()
     hourly_data["temperature_2m"] = hourly_temperature_2m
     hourly_data["relative_humidity_2m"] = hourly_relative_humidity_2m
     hourly_data["precipitation"] = hourly_precipitation
@@ -60,7 +62,9 @@ def process_hourly_data(response):
 def process_daily_data(response):
     daily = response.Daily()
     daily_uv_index_max = daily.Variables(0).ValuesAsNumpy()
+    city_name = city_entry.get()
 
+    daily_data["city_name"] = city_name
     daily_data = {
         "date": pd.date_range(
             start=pd.to_datetime(daily.Time(), unit="s", utc=True),
