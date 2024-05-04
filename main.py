@@ -1,3 +1,4 @@
+
 import tkinter as tk
 import pandas as pd
 from tkinter import messagebox
@@ -7,7 +8,8 @@ from visualization import visualize_hourly_temperature
 from city_input import get_city_coordinates
 
 def display_weather_info():
-    latitude, longitude = get_city_coordinates()
+    city_name = city_entry.get()  # Retrieve the value from the Entry widget
+    latitude, longitude = get_city_coordinates(city_name)
     if latitude is None or longitude is None:
         return
 
@@ -15,7 +17,7 @@ def display_weather_info():
     response = fetch_weather_data(latitude, longitude)
 
     # Display weather information in the text widget
-    weather_text.delete(1.0, tk.END)
+    weather_text.delete(1.0, tk.END) # Clear previous fetch result
     weather_text.insert(tk.END, f"Coordinates: {latitude}°N, {longitude}°E\n\n")
     weather_text.insert(tk.END, f"Elevation: {response.Elevation()} m asl\n")
     weather_text.insert(tk.END, f"Timezone: {response.Timezone()} {response.TimezoneAbbreviation()}\n")
@@ -75,10 +77,6 @@ def process_daily_data(response):
 root = tk.Tk()
 root.title("Weather App")
 
-# Function to handle button click
-def on_button_click():
-    display_weather_info()
-
 # Create GUI components
 city_label = tk.Label(root, text="Enter city name:")
 city_label.grid(row=0, column=0)
@@ -86,7 +84,7 @@ city_label.grid(row=0, column=0)
 city_entry = tk.Entry(root)
 city_entry.grid(row=0, column=1)
 
-fetch_button = tk.Button(root, text="Fetch Weather", command=on_button_click)
+fetch_button = tk.Button(root, text="Fetch Weather", command=display_weather_info)
 fetch_button.grid(row=0, column=2)
 
 weather_text = tk.Text(root, height=10, width=50)

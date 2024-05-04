@@ -1,8 +1,6 @@
 import pandas as pd
 
-def get_city_coordinates():
-    city_name = input("Enter city name: ")
-
+def get_city_coordinates(city_name):
     # Load city coordinates from Excel file
     try:
         city_data = pd.read_excel("worldcities\worldcities.xlsx")
