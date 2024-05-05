@@ -64,7 +64,7 @@ def process_daily_data(response):
     daily_uv_index_max = daily.Variables(0).ValuesAsNumpy()
     city_name = city_entry.get()
 
-    daily_data["city_name"] = city_name
+
     daily_data = {
         "date": pd.date_range(
             start=pd.to_datetime(daily.Time(), unit="s", utc=True),
@@ -73,6 +73,7 @@ def process_daily_data(response):
             inclusive="left"
         )
     }
+    daily_data["city_name"] = city_name
     daily_data["uv_index_max"] = daily_uv_index_max
 
     return pd.DataFrame(data=daily_data)
