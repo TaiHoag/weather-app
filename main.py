@@ -1,7 +1,6 @@
 
 import tkinter as tk
 import pandas as pd
-from tkinter import messagebox
 from weather_api import fetch_weather_data
 from database import store_hourly_data, store_daily_data
 from visualization import visualize_hourly_temperature
