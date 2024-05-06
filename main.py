@@ -1,4 +1,3 @@
-
 import tkinter as tk
 import pandas as pd
 from weather_api import fetch_weather_data
