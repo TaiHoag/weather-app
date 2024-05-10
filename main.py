@@ -1,8 +1,8 @@
-import tkinter as tk
+import customtkinter as tk
 import pandas as pd
 from weather_api import fetch_weather_data
 from database import store_hourly_data, store_daily_data
-from visualization import visualize_hourly_temperature
+from visualization import visualize_hourly_weather
 from city_input import get_city_coordinates
 
 def display_weather_info():
@@ -30,7 +30,7 @@ def display_weather_info():
     store_daily_data(daily_dataframe)
 
     # Visualize hourly temperature
-    visualize_hourly_temperature(hourly_dataframe)
+    visualize_hourly_weather(hourly_dataframe)
 
 def process_hourly_data(response):
     hourly = response.Hourly()
@@ -77,20 +77,21 @@ def process_daily_data(response):
     return pd.DataFrame(data=daily_data)
 
 # Create the main window
-root = tk.Tk()
+root = tk.CTk()
 root.title("Weather App")
+root.geometry("500x500")
 
 # Create GUI components
-city_label = tk.Label(root, text="Enter city name:")
+city_label = tk.CTkLabel(root, text="Enter city name:")
 city_label.grid(row=0, column=0)
 
-city_entry = tk.Entry(root)
+city_entry = tk.CTkEntry(root)
 city_entry.grid(row=0, column=1)
 
-fetch_button = tk.Button(root, text="Fetch Weather", command=display_weather_info)
+fetch_button = tk.CTkButton(root, text="Fetch Weather", command=display_weather_info)
 fetch_button.grid(row=0, column=2)
 
-weather_text = tk.Text(root, height=10, width=50)
+weather_text = tk.CTkTextbox(root, height=10, width=50)
 weather_text.grid(row=1, columnspan=3)
 
 root.mainloop()
