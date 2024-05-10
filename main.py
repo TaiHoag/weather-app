@@ -3,7 +3,7 @@ import pandas as pd
 from weather_api import fetch_weather_data
 from database import store_hourly_data, store_daily_data
 from visualization import visualize_hourly_weather
-from city_input import get_city_coordinates
+from city_input import get_city_coordinates, get_all_city_names
 
 def display_weather_info():
     city_name = city_entry.get()  # Retrieve the value from the Entry widget
@@ -81,8 +81,11 @@ root.title("Weather App")
 root.geometry("500x500")
 myfont = tk.CTkFont(family="Calibri", size=20)
 
+# Get city names from the file
+city_names = get_all_city_names()
+
 # Create GUI components
-city_entry = tk.CTkEntry(root, font=myfont, placeholder_text="Type a City name ...", width=250)
+city_entry = tk.CTkComboBox(root, values=city_names, font=myfont, width=250)
 city_entry.grid(row=0, column=1, padx=5, pady=5)
 
 fetch_button = tk.CTkButton(root, font=myfont, text="Fetch Weather", fg_color="orange", hover_color="#ff6100", command=display_weather_info)

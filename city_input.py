@@ -15,3 +15,8 @@ def get_city_coordinates(city_name):
     except FileNotFoundError:
         print("City coordinates file not found.")
         return None, None
+
+# Function to fetch city names from the file
+def get_all_city_names():
+    df = pd.read_excel("worldcities\worldcities.xlsx")
+    return df['city'].tolist()
