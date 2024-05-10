@@ -16,11 +16,10 @@ def display_weather_info():
 
     # Display weather information in the text widget
     weather_text.delete(1.0, tk.END) # Clear previous fetch result
-    weather_text.insert(tk.END, f"City Name {city_name}\n")
+    weather_text.insert(tk.END, f"City Name: {city_name}\n")
     weather_text.insert(tk.END, f"Coordinates: {latitude}°N, {longitude}°E\n\n")
     weather_text.insert(tk.END, f"Elevation: {response.Elevation()} m asl\n")
     weather_text.insert(tk.END, f"Timezone: {response.Timezone()} {response.TimezoneAbbreviation()}\n")
-    weather_text.insert(tk.END, f"Timezone difference to GMT+0: {response.UtcOffsetSeconds()} s\n\n")
 
     hourly_dataframe = process_hourly_data(response)
     daily_dataframe = process_daily_data(response)
@@ -80,18 +79,16 @@ def process_daily_data(response):
 root = tk.CTk()
 root.title("Weather App")
 root.geometry("500x500")
+myfont = tk.CTkFont(family="Calibri", size=15)
 
 # Create GUI components
-city_label = tk.CTkLabel(root, text="Enter city name:")
-city_label.grid(row=0, column=0)
+city_entry = tk.CTkEntry(root, font=myfont, placeholder_text="Type a City name ...", width=200)
+city_entry.grid(row=0, column=1, padx=5, pady=5)
 
-city_entry = tk.CTkEntry(root)
-city_entry.grid(row=0, column=1)
+fetch_button = tk.CTkButton(root, font=myfont, text="Fetch Weather", fg_color="orange", hover_color="#ff6100", command=display_weather_info)
+fetch_button.grid(row=0, column=2, padx=5, pady=5)
 
-fetch_button = tk.CTkButton(root, text="Fetch Weather", command=display_weather_info)
-fetch_button.grid(row=0, column=2)
-
-weather_text = tk.CTkTextbox(root, height=10, width=50)
-weather_text.grid(row=1, columnspan=3)
+weather_text = tk.CTkTextbox(root, font=myfont, width=400, scrollbar_button_color="Orange", corner_radius=16, border_color="Orange", border_width=2)
+weather_text.grid(row=1, column=0, columnspan=3, padx=5, pady=5)
 
 root.mainloop()
