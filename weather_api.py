@@ -1,6 +1,5 @@
 import openmeteo_requests
 import requests_cache
-import pandas as pd
 from retry_requests import retry
 
 def fetch_weather_data(latitude, longitude,):
