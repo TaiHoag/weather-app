@@ -1,3 +1,3 @@
 # weather-app
 
-~work in progress~
+work in progress
