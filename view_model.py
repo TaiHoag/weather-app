@@ -2,6 +2,7 @@ import customtkinter as tk
 from city_input import get_all_city_names
 from CTkListbox import *
 
+
 def on_key_press(event, city_entry, city_names, city_listbox):
     input_text = city_entry.get()
     suggestions = [city for city in city_names if city.startswith(input_text)][:5]
@@ -30,12 +31,12 @@ def on_suggestion_select(event, city_entry, city_listbox):
 def create_gui(fetch_weather_callback):
     root = tk.CTk()
     root.title("Weather App")
-    root.geometry("500x500")
+    root.geometry("1920x1080")
     myfont = tk.CTkFont(family="Calibri", size=20)
 
     city_names = get_all_city_names()
 
-    city_entry = tk.CTkEntry(root, font=myfont, width=250)
+    city_entry = tk.CTkEntry(root, font=myfont, width=250, height=30)
     city_entry.grid(row=0, column=1, padx=5, pady=5)
 
     city_listbox = CTkListbox(root, font=myfont, width=250)
@@ -48,6 +49,6 @@ def create_gui(fetch_weather_callback):
     fetch_button.grid(row=0, column=2, padx=5, pady=5)
 
     weather_text = tk.CTkTextbox(root, font=myfont, width=400, scrollbar_button_color="Orange", corner_radius=16, border_color="Orange", border_width=2)
-    weather_text.place(relx=0.5, rely=0.7, anchor=tk.CENTER)
+    weather_text.grid(row=3, column=1, padx=5, pady=5)
 
     return root, city_entry, weather_text, city_listbox
