@@ -67,25 +67,20 @@ def create_gui(fetch_weather_callback):
     city_entry.grid(row=0, column=1, padx=5, pady=5)
 
     def checkkey(event):
-        value = event.widget.get()
+        value = city_entry.get()
+        city_list = city_names
 
-        if value == "":
-            city_list = city_names
-        else:
-            city_list = []
-            for city in city_list:
-                if city.startswith(value):
-                    city_list.append(city)
+        city_list = [city for city in city_list if city.lower().startswith(value.lower())]
         
         update_suggestions(city_list)
         
     
     def update_suggestions(city_list):
-        city_entry.configure(values=city_list)
+        
         if city_list:
-            city_entry.set(city_list[0])
+            city_entry.configure(values=city_list)
         else:
-            city_entry.set("")    
+            city_entry.configure(values=(""))    
 
     city_entry.bind('<KeyRelease>', checkkey)
 
