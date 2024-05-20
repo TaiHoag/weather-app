@@ -5,7 +5,7 @@ from CTkListbox import *
 def create_gui(fetch_weather_callback):
     root = tk.CTk()
     root.title("Weather App")
-    root.geometry("1920x1080")
+    root.geometry("1080x1080")
     myfont = tk.CTkFont(family="Calibri", size=20)
 
     city_names = get_all_city_names()
