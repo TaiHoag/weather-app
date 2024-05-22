@@ -18,7 +18,7 @@ def create_gui(fetch_weather_callback):
         value = city_entry.get()
         city_list = city_names
 
-        city_list = [city for city in city_list if city.lower().startswith(value.lower())]
+        city_list = [city for city in city_list if city.lower().startswith(value.lower())][:5]
         
         update_suggestions(city_list)
         
