@@ -7,10 +7,6 @@ import openmeteo_requests
 import requests_cache
 from retry_requests import retry
 
-# Set CustomTkinter theme
-tk.set_appearance_mode("dark")
-tk.set_default_color_theme("blue")
-
 # API Calls
 def fetch_weather_data(latitude, longitude):
     """Fetch weather data from Open Meteo API with caching and retry mechanism."""
@@ -98,12 +94,39 @@ def store_daily_data(daily_dataframe):
     engine = db.create_engine('sqlite:///weather_data.db')
     daily_dataframe.to_sql('daily_data', con=engine, if_exists='append', index=False)
 
-# Visualization
+# Plotting Functions
+def plot_in_new_window(data, title, xlabel, ylabel):
+    """Plot data in a new window."""
+    new_window = tk.CTkToplevel()
+    new_window.title(title)
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    plot_color = 'peru'
+    fg_color = 'black'
+    bg_color = 'black'
+
+    fig.patch.set_facecolor(bg_color)
+    ax.plot(data['date'], data[ylabel], marker='o', linestyle='-', color=plot_color)
+    ax.set_title(title, color=plot_color)
+    ax.set_xlabel(xlabel, color=plot_color)
+    ax.set_ylabel(ylabel, color=plot_color)
+    ax.set_facecolor(fg_color)
+    ax.tick_params(axis='x', rotation=45, colors=plot_color)
+    ax.tick_params(axis='y', colors=plot_color)
+    ax.grid(True, color=plot_color)
+
+    fig.tight_layout()
+    
+    canvas = FigureCanvasTkAgg(fig, new_window)
+    canvas.draw()
+    canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+
 def visualize_hourly_weather(hourly_dataframe, canvas):
     """Visualize hourly weather data."""
-    fig, axs = plt.subplots(2, 2, figsize=(10, 6))
+    fig, axs = plt.subplots(3, 2, figsize=(12, 8))
 
-    plot_color = 'lightblue'
+    plot_color = 'peru'
+    fg_color = 'black'
     bg_color = 'black'
 
     fig.patch.set_facecolor(bg_color)
@@ -111,6 +134,7 @@ def visualize_hourly_weather(hourly_dataframe, canvas):
     axs[0, 0].set_title('Hourly Temperature Variation', color=plot_color)
     axs[0, 0].set_xlabel('Date', color=plot_color)
     axs[0, 0].set_ylabel('Temperature (°C)', color=plot_color)
+    axs[0, 0].set_facecolor(fg_color)
     axs[0, 0].tick_params(axis='x', rotation=45, colors=plot_color)
     axs[0, 0].tick_params(axis='y', colors=plot_color)
     axs[0, 0].grid(True, color=plot_color)
@@ -119,6 +143,7 @@ def visualize_hourly_weather(hourly_dataframe, canvas):
     axs[0, 1].set_title('Hourly Humidity Variation', color=plot_color)
     axs[0, 1].set_xlabel('Date', color=plot_color)
     axs[0, 1].set_ylabel('Relative Humidity (%)', color=plot_color)
+    axs[0, 1].set_facecolor(fg_color)
     axs[0, 1].tick_params(axis='x', rotation=45, colors=plot_color)
     axs[0, 1].tick_params(axis='y', colors=plot_color)
     axs[0, 1].grid(True, color=plot_color)
@@ -127,6 +152,7 @@ def visualize_hourly_weather(hourly_dataframe, canvas):
     axs[1, 0].set_title('Hourly Precipitation Variation', color=plot_color)
     axs[1, 0].set_xlabel('Date', color=plot_color)
     axs[1, 0].set_ylabel('Precipitation (mm)', color=plot_color)
+    axs[1, 0].set_facecolor(fg_color)
     axs[1, 0].tick_params(axis='x', rotation=45, colors=plot_color)
     axs[1, 0].tick_params(axis='y', colors=plot_color)
     axs[1, 0].grid(True, color=plot_color)
@@ -135,9 +161,21 @@ def visualize_hourly_weather(hourly_dataframe, canvas):
     axs[1, 1].set_title('Hourly Rain Variation', color=plot_color)
     axs[1, 1].set_xlabel('Date', color=plot_color)
     axs[1, 1].set_ylabel('Rain (mm)', color=plot_color)
+    axs[1, 1].set_facecolor(fg_color)
     axs[1, 1].tick_params(axis='x', rotation=45, colors=plot_color)
     axs[1, 1].tick_params(axis='y', colors=plot_color)
     axs[1, 1].grid(True, color=plot_color)
+
+    axs[2, 0].plot(hourly_dataframe['date'], hourly_dataframe['cloud_cover'], marker='o', linestyle='-', color=plot_color)
+    axs[2, 0].set_title('Hourly Cloud Cover Variation', color=plot_color)
+    axs[2, 0].set_xlabel('Date', color=plot_color)
+    axs[2, 0].set_ylabel('Cloud Cover (%)', color=plot_color)
+    axs[2, 0].set_facecolor(fg_color)
+    axs[2, 0].tick_params(axis='x', rotation=45, colors=plot_color)
+    axs[2, 0].tick_params(axis='y', colors=plot_color)
+    axs[2, 0].grid(True, color=plot_color)
+
+    axs[2, 1].axis('off')  # Empty subplot for better layout
 
     fig.tight_layout()
     
@@ -148,6 +186,18 @@ def visualize_hourly_weather(hourly_dataframe, canvas):
     canvas_agg = FigureCanvasTkAgg(fig, canvas)
     canvas_agg.draw()
     canvas_agg.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+
+    # Bind subplot clicks to new window plot function
+    def on_click(event, ax, title, ylabel):
+        plot_in_new_window(hourly_dataframe, title, 'Date', ylabel)
+
+    for ax, title, ylabel in zip(axs.flatten()[:-1], 
+                                 ['Hourly Temperature Variation', 'Hourly Humidity Variation', 
+                                  'Hourly Precipitation Variation', 'Hourly Rain Variation', 
+                                  'Hourly Cloud Cover Variation'], 
+                                 ['temperature_2m', 'relative_humidity_2m', 'precipitation', 'rain', 'cloud_cover']):
+        ax.set_picker(True)
+        fig.canvas.mpl_connect('pick_event', lambda event, ax=ax, title=title, ylabel=ylabel: on_click(event, ax, title, ylabel))
 
 # Display Data
 def display_weather_info(city_entry, weather_text, canvas):
@@ -212,13 +262,20 @@ def create_gui(fetch_weather_callback):
     root.grid_columnconfigure(1, weight=1)
     root.grid_columnconfigure(2, weight=1)
 
+    root.bind('<Escape>', lambda event: root.destroy())
+
     return root, city_entry, weather_text, canvas_frame
 
 # Main
 def main():
     """Main function to run the GUI application."""
+    # Set CustomTkinter theme
+    tk.set_appearance_mode("dark")
+    tk.set_default_color_theme("blue")
+
     root, city_entry, weather_text, canvas_frame = create_gui(lambda: display_weather_info(city_entry, weather_text, canvas_frame))
     root.mainloop()
+
 
 if __name__ == "__main__":
     main()
