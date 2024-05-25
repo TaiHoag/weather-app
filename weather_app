@@ -1,9 +1,8 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import customtkinter as tk
 import sqlalchemy as db
-from city_input import get_all_city_names
-from CTkListbox import *
 import openmeteo_requests
 import requests_cache
 from retry_requests import retry
@@ -84,8 +83,66 @@ def process_daily_data(response, city_name):
     }
     return pd.DataFrame(data=daily_data)
 
+# Store Data
+def store_hourly_data(hourly_dataframe):
+    """Store hourly data in the database."""
+    engine = db.create_engine('sqlite:///weather_data.db')
+    hourly_dataframe.to_sql('hourly_data', con=engine, if_exists='append', index=False)
+
+def store_daily_data(daily_dataframe):
+    """Store daily data in the database."""
+    engine = db.create_engine('sqlite:///weather_data.db')
+    daily_dataframe.to_sql('daily_data', con=engine, if_exists='append', index=False)
+
+# Visualization
+def visualize_hourly_weather(hourly_dataframe, canvas):
+    """Visualize hourly weather data."""
+    fig, axs = plt.subplots(2, 2, figsize=(10, 6))
+
+    # Plot temperature
+    axs[0, 0].plot(hourly_dataframe['date'], hourly_dataframe['temperature_2m'], marker='o', linestyle='-')
+    axs[0, 0].set_title('Hourly Temperature Variation')
+    axs[0, 0].set_xlabel('Date')
+    axs[0, 0].set_ylabel('Temperature (°C)')
+    axs[0, 0].tick_params(axis='x', rotation=45)
+    axs[0, 0].grid(True)
+
+    # Plot humidity
+    axs[0, 1].plot(hourly_dataframe['date'], hourly_dataframe['relative_humidity_2m'], marker='o', linestyle='-')
+    axs[0, 1].set_title('Hourly Humidity Variation')
+    axs[0, 1].set_xlabel('Date')
+    axs[0, 1].set_ylabel('Relative Humidity (%)')
+    axs[0, 1].tick_params(axis='x', rotation=45)
+    axs[0, 1].grid(True)
+
+    # Plot precipitation
+    axs[1, 0].plot(hourly_dataframe['date'], hourly_dataframe['precipitation'], marker='o', linestyle='-')
+    axs[1, 0].set_title('Hourly Precipitation Variation')
+    axs[1, 0].set_xlabel('Date')
+    axs[1, 0].set_ylabel('Precipitation (mm)')
+    axs[1, 0].tick_params(axis='x', rotation=45)
+    axs[1, 0].grid(True)
+
+    # Plot rain
+    axs[1, 1].plot(hourly_dataframe['date'], hourly_dataframe['rain'], marker='o', linestyle='-')
+    axs[1, 1].set_title('Hourly Rain Variation')
+    axs[1, 1].set_xlabel('Date')
+    axs[1, 1].set_ylabel('Rain (mm)')
+    axs[1, 1].tick_params(axis='x', rotation=45)
+    axs[1, 1].grid(True)
+
+    fig.tight_layout()
+    
+    # Clear previous plots
+    for widget in canvas.winfo_children():
+        widget.destroy()
+    
+    canvas_agg = FigureCanvasTkAgg(fig, canvas)
+    canvas_agg.draw()
+    canvas_agg.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+
 # Display Data
-def display_weather_info(city_entry, weather_text):
+def display_weather_info(city_entry, weather_text, canvas):
     """Fetch and display weather information for the selected city."""
     city_name = city_entry.get()
     latitude, longitude = get_city_coordinates(city_name)
@@ -105,68 +162,14 @@ def display_weather_info(city_entry, weather_text):
 
     store_hourly_data(hourly_dataframe)
     store_daily_data(daily_dataframe)
-    visualize_hourly_weather(hourly_dataframe)
-
-def visualize_hourly_weather(hourly_dataframe):
-    """Visualize hourly weather data."""
-    plt.figure(figsize=(10, 6))
-
-    # Plot temperature
-    plt.subplot(2, 2, 1)
-    plt.plot(hourly_dataframe['date'], hourly_dataframe['temperature_2m'], marker='o', linestyle='-')
-    plt.title('Hourly Temperature Variation')
-    plt.xlabel('Date')
-    plt.ylabel('Temperature (°C)')
-    plt.xticks(rotation=45)
-    plt.grid(True)
-
-    # Plot humidity
-    plt.subplot(2, 2, 2)
-    plt.plot(hourly_dataframe['date'], hourly_dataframe['relative_humidity_2m'], marker='o', linestyle='-')
-    plt.title('Hourly Humidity Variation')
-    plt.xlabel('Date')
-    plt.ylabel('Relative Humidity (%)')
-    plt.xticks(rotation=45)
-    plt.grid(True)
-
-    # Plot precipitation
-    plt.subplot(2, 2, 3)
-    plt.plot(hourly_dataframe['date'], hourly_dataframe['precipitation'], marker='o', linestyle='-')
-    plt.title('Hourly Precipitation Variation')
-    plt.xlabel('Date')
-    plt.ylabel('Precipitation (mm)')
-    plt.xticks(rotation=45)
-    plt.grid(True)
-
-    # Plot rain
-    plt.subplot(2, 2, 4)
-    plt.plot(hourly_dataframe['date'], hourly_dataframe['rain'], marker='o', linestyle='-')
-    plt.title('Hourly Rain Variation')
-    plt.xlabel('Date')
-    plt.ylabel('Rain (mm)')
-    plt.xticks(rotation=45)
-    plt.grid(True)
-
-    plt.tight_layout()
-    plt.show()
-
-# Store Data
-def store_hourly_data(hourly_dataframe):
-    """Store hourly data in the database."""
-    engine = db.create_engine('sqlite:///weather_data.db')
-    hourly_dataframe.to_sql('hourly_data', con=engine, if_exists='append', index=False)
-
-def store_daily_data(daily_dataframe):
-    """Store daily data in the database."""
-    engine = db.create_engine('sqlite:///weather_data.db')
-    daily_dataframe.to_sql('daily_data', con=engine, if_exists='append', index=False)
+    visualize_hourly_weather(hourly_dataframe, canvas)
 
 # GUI
 def create_gui(fetch_weather_callback):
     """Create the GUI for the weather application."""
     root = tk.CTk()
     root.title("Weather App")
-    root.geometry("1080x1080")
+    root.geometry("1200x800")
     myfont = tk.CTkFont(family="Calibri", size=20)
 
     city_names = get_all_city_names()
@@ -191,15 +194,18 @@ def create_gui(fetch_weather_callback):
     fetch_button = tk.CTkButton(root, font=myfont, text="Fetch Weather", fg_color="orange", hover_color="#ff6100", command=fetch_weather_callback)
     fetch_button.grid(row=0, column=2, padx=5, pady=5)
 
-    weather_text = tk.CTkTextbox(root, font=myfont, width=400, scrollbar_button_color="Orange", corner_radius=16, border_color="Orange", border_width=2)
+    weather_text = tk.CTkTextbox(root, font=myfont, width=400, height=200, scrollbar_button_color="Orange", corner_radius=16, border_color="Orange", border_width=2)
     weather_text.grid(row=3, column=1, padx=5, pady=5)
 
-    return root, city_entry, weather_text
+    canvas = tk.CTkFrame(root)
+    canvas.grid(row=4, column=1, columnspan=2, padx=5, pady=5, sticky="nsew")
+
+    return root, city_entry, weather_text, canvas
 
 # Main
 def main():
     """Main function to run the GUI application."""
-    root, city_entry, weather_text = create_gui(lambda: display_weather_info(city_entry, weather_text))
+    root, city_entry, weather_text, canvas = create_gui(lambda: display_weather_info(city_entry, weather_text, canvas))
     root.mainloop()
 
 if __name__ == "__main__":
