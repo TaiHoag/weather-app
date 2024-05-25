@@ -7,6 +7,10 @@ import openmeteo_requests
 import requests_cache
 from retry_requests import retry
 
+# Set CustomTkinter theme
+tk.set_appearance_mode("dark")
+tk.set_default_color_theme("blue")
+
 # API Calls
 def fetch_weather_data(latitude, longitude):
     """Fetch weather data from Open Meteo API with caching and retry mechanism."""
@@ -99,37 +103,41 @@ def visualize_hourly_weather(hourly_dataframe, canvas):
     """Visualize hourly weather data."""
     fig, axs = plt.subplots(2, 2, figsize=(10, 6))
 
-    # Plot temperature
-    axs[0, 0].plot(hourly_dataframe['date'], hourly_dataframe['temperature_2m'], marker='o', linestyle='-')
-    axs[0, 0].set_title('Hourly Temperature Variation')
-    axs[0, 0].set_xlabel('Date')
-    axs[0, 0].set_ylabel('Temperature (°C)')
-    axs[0, 0].tick_params(axis='x', rotation=45)
-    axs[0, 0].grid(True)
+    plot_color = 'lightblue'
+    bg_color = 'black'
 
-    # Plot humidity
-    axs[0, 1].plot(hourly_dataframe['date'], hourly_dataframe['relative_humidity_2m'], marker='o', linestyle='-')
-    axs[0, 1].set_title('Hourly Humidity Variation')
-    axs[0, 1].set_xlabel('Date')
-    axs[0, 1].set_ylabel('Relative Humidity (%)')
-    axs[0, 1].tick_params(axis='x', rotation=45)
-    axs[0, 1].grid(True)
+    fig.patch.set_facecolor(bg_color)
+    axs[0, 0].plot(hourly_dataframe['date'], hourly_dataframe['temperature_2m'], marker='o', linestyle='-', color=plot_color)
+    axs[0, 0].set_title('Hourly Temperature Variation', color=plot_color)
+    axs[0, 0].set_xlabel('Date', color=plot_color)
+    axs[0, 0].set_ylabel('Temperature (°C)', color=plot_color)
+    axs[0, 0].tick_params(axis='x', rotation=45, colors=plot_color)
+    axs[0, 0].tick_params(axis='y', colors=plot_color)
+    axs[0, 0].grid(True, color=plot_color)
 
-    # Plot precipitation
-    axs[1, 0].plot(hourly_dataframe['date'], hourly_dataframe['precipitation'], marker='o', linestyle='-')
-    axs[1, 0].set_title('Hourly Precipitation Variation')
-    axs[1, 0].set_xlabel('Date')
-    axs[1, 0].set_ylabel('Precipitation (mm)')
-    axs[1, 0].tick_params(axis='x', rotation=45)
-    axs[1, 0].grid(True)
+    axs[0, 1].plot(hourly_dataframe['date'], hourly_dataframe['relative_humidity_2m'], marker='o', linestyle='-', color=plot_color)
+    axs[0, 1].set_title('Hourly Humidity Variation', color=plot_color)
+    axs[0, 1].set_xlabel('Date', color=plot_color)
+    axs[0, 1].set_ylabel('Relative Humidity (%)', color=plot_color)
+    axs[0, 1].tick_params(axis='x', rotation=45, colors=plot_color)
+    axs[0, 1].tick_params(axis='y', colors=plot_color)
+    axs[0, 1].grid(True, color=plot_color)
 
-    # Plot rain
-    axs[1, 1].plot(hourly_dataframe['date'], hourly_dataframe['rain'], marker='o', linestyle='-')
-    axs[1, 1].set_title('Hourly Rain Variation')
-    axs[1, 1].set_xlabel('Date')
-    axs[1, 1].set_ylabel('Rain (mm)')
-    axs[1, 1].tick_params(axis='x', rotation=45)
-    axs[1, 1].grid(True)
+    axs[1, 0].plot(hourly_dataframe['date'], hourly_dataframe['precipitation'], marker='o', linestyle='-', color=plot_color)
+    axs[1, 0].set_title('Hourly Precipitation Variation', color=plot_color)
+    axs[1, 0].set_xlabel('Date', color=plot_color)
+    axs[1, 0].set_ylabel('Precipitation (mm)', color=plot_color)
+    axs[1, 0].tick_params(axis='x', rotation=45, colors=plot_color)
+    axs[1, 0].tick_params(axis='y', colors=plot_color)
+    axs[1, 0].grid(True, color=plot_color)
+
+    axs[1, 1].plot(hourly_dataframe['date'], hourly_dataframe['rain'], marker='o', linestyle='-', color=plot_color)
+    axs[1, 1].set_title('Hourly Rain Variation', color=plot_color)
+    axs[1, 1].set_xlabel('Date', color=plot_color)
+    axs[1, 1].set_ylabel('Rain (mm)', color=plot_color)
+    axs[1, 1].tick_params(axis='x', rotation=45, colors=plot_color)
+    axs[1, 1].tick_params(axis='y', colors=plot_color)
+    axs[1, 1].grid(True, color=plot_color)
 
     fig.tight_layout()
     
@@ -176,7 +184,7 @@ def create_gui(fetch_weather_callback):
 
     combobox_var = tk.StringVar(value="")
     city_entry = tk.CTkComboBox(root, width=250, values=city_names, variable=combobox_var)
-    city_entry.grid(row=0, column=1, padx=5, pady=5)
+    city_entry.grid(row=0, column=1, padx=5, pady=5, sticky="nsew")
 
     def checkkey(event):
         value = city_entry.get()
@@ -192,13 +200,17 @@ def create_gui(fetch_weather_callback):
     city_entry.bind('<KeyRelease>', checkkey)
 
     fetch_button = tk.CTkButton(root, font=myfont, text="Fetch Weather", fg_color="orange", hover_color="#ff6100", command=fetch_weather_callback)
-    fetch_button.grid(row=0, column=2, padx=5, pady=5)
+    fetch_button.grid(row=0, column=2, padx=5, pady=5, sticky="nsew")
 
-    weather_text = tk.CTkTextbox(root, font=myfont, width=400, height=200, scrollbar_button_color="Orange", corner_radius=16, border_color="Orange", border_width=2)
-    weather_text.grid(row=3, column=1, padx=5, pady=5)
+    weather_text = tk.CTkTextbox(root, font=myfont, width=400, height=200, scrollbar_button_color="orange", corner_radius=16, border_color="orange", border_width=2)
+    weather_text.grid(row=1, column=1, columnspan=2, padx=5, pady=5, sticky="nsew")
 
     canvas_frame = tk.CTkFrame(root, width=800, height=600)
-    canvas_frame.grid(row=4, column=1, padx=5, pady=5, sticky="nsew")
+    canvas_frame.grid(row=2, column=1, columnspan=2, padx=5, pady=5, sticky="nsew")
+
+    root.grid_rowconfigure(2, weight=1)
+    root.grid_columnconfigure(1, weight=1)
+    root.grid_columnconfigure(2, weight=1)
 
     return root, city_entry, weather_text, canvas_frame
 
