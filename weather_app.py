@@ -189,16 +189,14 @@ def visualize_hourly_weather(hourly_dataframe, canvas):
 
     # Bind subplot clicks to new window plot function
     def on_click(event, ax, title, ylabel):
-        plot_in_new_window(hourly_dataframe, title, 'Date', ylabel)
+        if event.inaxes == ax:
+            plot_in_new_window(hourly_dataframe, title, 'Date', ylabel)
 
-    for ax, title, ylabel in zip(axs.flatten()[:-1], 
-                                 ['Hourly Temperature Variation', 'Hourly Humidity Variation', 
-                                  'Hourly Precipitation Variation', 'Hourly Rain Variation', 
-                                  'Hourly Cloud Cover Variation'], 
-                                 ['temperature_2m', 'relative_humidity_2m', 'precipitation', 'rain', 'cloud_cover']):
-        ax.set_picker(True)
-        fig.canvas.mpl_connect('pick_event', lambda event, ax=ax, title=title, ylabel=ylabel: on_click(event, ax, title, ylabel))
-
+    fig.canvas.mpl_connect('button_press_event', lambda event: on_click(event, axs[0, 0], 'Hourly Temperature Variation', 'temperature_2m'))
+    fig.canvas.mpl_connect('button_press_event', lambda event: on_click(event, axs[0, 1], 'Hourly Humidity Variation', 'relative_humidity_2m'))
+    fig.canvas.mpl_connect('button_press_event', lambda event: on_click(event, axs[1, 0], 'Hourly Precipitation Variation', 'precipitation'))
+    fig.canvas.mpl_connect('button_press_event', lambda event: on_click(event, axs[1, 1], 'Hourly Rain Variation', 'rain'))
+    fig.canvas.mpl_connect('button_press_event', lambda event: on_click(event, axs[2, 0], 'Hourly Cloud Cover Variation', 'cloud_cover'))
 # Display Data
 def display_weather_info(city_entry, weather_text, canvas):
     """Fetch and display weather information for the selected city."""
