@@ -124,6 +124,7 @@ def plot_in_new_window(data, title, xlabel, ylabel):
     """Plot data in a new window with analysis report."""
     new_window = tk.CTkToplevel()
     new_window.title(title)
+    new_window._state_before_windows_set_titlebar_color = 'zoomed'
     fig, ax = plt.subplots(figsize=(10, 6))
 
     plot_color = 'peru'
@@ -148,7 +149,7 @@ def plot_in_new_window(data, title, xlabel, ylabel):
 
     analysis_report = analyze_data(data, ylabel)
     
-    text_box = tk.CTkTextbox(new_window, width=100, height=10, font=('Arial', 12))
+    text_box = tk.CTkTextbox(new_window, width=100, height=50, font=('Calibri', 20))
     text_box.insert(tk.END, analysis_report)
     text_box.pack(fill=tk.BOTH, expand=True)
 
