@@ -6,9 +6,8 @@ import sqlalchemy as db
 import openmeteo_requests
 import requests_cache
 from retry_requests import retry
-from datetime import datetime, timedelta
+from datetime import datetime
 import pytz
-from matplotlib.colors import LinearSegmentedColormap
 
 
 # API Calls
