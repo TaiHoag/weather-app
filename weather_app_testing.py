@@ -7,16 +7,14 @@ import openmeteo_requests
 import requests_cache
 from retry_requests import retry
 from datetime import datetime
-from matplotlib.colors import LinearSegmentedColormap
+import pytz
 
 
 # API Calls
 def fetch_weather_data(latitude, longitude):
-    """Fetch weather data from Open Meteo API with caching and retry mechanism."""
     cache_session = requests_cache.CachedSession(".cache", expire_after=3600)
     retry_session = retry(cache_session, retries=5, backoff_factor=0.2)
     openmeteo = openmeteo_requests.Client(session=retry_session)
-
     url = "https://api.open-meteo.com/v1/forecast"
     params = {
         "latitude": latitude,
@@ -38,13 +36,13 @@ def fetch_weather_data(latitude, longitude):
 
 # Get City Data
 def get_city_coordinates(city_name):
-    """Retrieve the coordinates of a city from the Excel file."""
     try:
-        city_data = pd.read_excel("worldcities/worldcities.xlsx")
+        city_data = pd.read_excel(
+            "worldcities/worldcities.xlsx", usecols=["city", "lat", "lng"]
+        )
         city_info = city_data[city_data["city"] == city_name]
         if not city_info.empty:
-            latitude = city_info.iloc[0]["lat"]
-            longitude = city_info.iloc[0]["lng"]
+            latitude, longitude = city_info.iloc[0][["lat", "lng"]]
             return latitude, longitude
         else:
             print("City not found in database.")
@@ -55,14 +53,12 @@ def get_city_coordinates(city_name):
 
 
 def get_all_city_names():
-    """Retrieve all city names from the Excel file."""
-    df = pd.read_excel("worldcities/worldcities.xlsx")
+    df = pd.read_excel("worldcities/worldcities.xlsx", usecols=["city"])
     return df["city"].tolist()
 
 
 # Data Processing
 def process_hourly_data(response, city_name):
-    """Process hourly weather data."""
     hourly = response.Hourly()
     hourly_data = {
         "date": pd.date_range(
@@ -82,7 +78,6 @@ def process_hourly_data(response, city_name):
 
 
 def process_daily_data(response, city_name):
-    """Process daily weather data."""
     daily = response.Daily()
     daily_data = {
         "date": pd.date_range(
@@ -99,22 +94,25 @@ def process_daily_data(response, city_name):
 
 # Store Data
 def store_hourly_data(hourly_dataframe):
-    """Store hourly data in the database."""
     engine = db.create_engine("sqlite:///weather_data.db")
-    hourly_dataframe.to_sql("hourly_data", con=engine,
-                            if_exists="append", index=False)
+    hourly_dataframe.to_sql(
+        "hourly_data",
+        con=engine,
+        if_exists="append",
+        index=False)
 
 
 def store_daily_data(daily_dataframe):
-    """Store daily data in the database."""
     engine = db.create_engine("sqlite:///weather_data.db")
-    daily_dataframe.to_sql("daily_data", con=engine,
-                           if_exists="append", index=False)
+    daily_dataframe.to_sql(
+        "daily_data",
+        con=engine,
+        if_exists="append",
+        index=False)
 
 
 # Analysis Functions
 def analyze_data(data, column):
-    """Perform basic analysis on the data column."""
     analysis_report = f"""
     Analysis for {column.replace('_', ' ').title()}:
     - Mean: {data[column].mean():.2f}
@@ -126,38 +124,29 @@ def analyze_data(data, column):
     return analysis_report
 
 
-# Fetch Current Sky Color Based on Time
-def get_sky_color(hour):
-    """Determine sky color based on the hour of the day."""
-    if 6 <= hour < 18:
-        plot_color = "e8dbe2"
-        fg_color = "b4c4ec"
-        bg_color = "b4c4ec"
-    elif 18 <= hour < 20:
-        plot_color = "b4c4ec"
-        fg_color = "a285a8"
-        bg_color = "a285a8"
-    else:
-        plot_color = "peru"
-        fg_color = "black"
-        bg_color = "black"
+# Calculate Local Time of City
+def get_local_time(response):
+    timezone = response.Timezone()
+    local_time = datetime.now(pytz.timezone(timezone))
+    return local_time
 
 
 # Plotting Functions
-def plot_in_new_window(data, title, xlabel, ylabel):
-    """Plot data in a new window with analysis report."""
+def plot_in_new_window(data, title, xlabel, ylabel, local_time):
     new_window = tk.CTkToplevel()
     new_window.title(title)
     new_window._state_before_windows_set_titlebar_color = "zoomed"
     fig, ax = plt.subplots(figsize=(10, 6))
 
-    plot_color = "peru"
-    fg_color = "black"
-    bg_color = "black"
+    plot_color, fg_color, bg_color = get_color_gradient(local_time.hour)
 
     fig.patch.set_facecolor(bg_color)
-    ax.plot(data["date"], data[ylabel], marker="o",
-            linestyle="-", color=plot_color)
+    ax.plot(
+        data["date"],
+        data[ylabel],
+        marker="o",
+        linestyle="-",
+        color=plot_color)
     ax.set_title(title, color=plot_color)
     ax.set_xlabel(xlabel, color=plot_color)
     ax.set_ylabel(ylabel, color=plot_color)
@@ -174,19 +163,53 @@ def plot_in_new_window(data, title, xlabel, ylabel):
 
     analysis_report = analyze_data(data, ylabel)
 
-    text_box = tk.CTkTextbox(new_window, width=100,
-                             height=50, font=("Calibri", 20))
+    text_box = tk.CTkTextbox(
+        new_window,
+        width=100,
+        height=50,
+        font=(
+            "Calibri",
+            20))
     text_box.insert(tk.END, analysis_report)
+    text_box.configure(state="disabled")
     text_box.pack(fill=tk.BOTH, expand=True)
 
 
-def visualize_hourly_weather(hourly_dataframe, canvas):
-    """Visualize hourly weather data."""
+def get_sky_color(time_of_day):
+    if 6 <= time_of_day < 12:
+        return "whitesmoke"
+    elif 12 <= time_of_day < 18:
+        return "bisque"
+    elif 18 <= time_of_day < 20:
+        return "lightpink"
+    else:
+        return "royalblue"
+
+
+def get_color_gradient(time_of_day):
+    if 6 <= time_of_day < 12:
+        plot_color = "whitesmoke"
+        fg_color = "deepskyblue"
+        bg_color = "deepskyblue"
+    elif 12 <= time_of_day < 18:
+        plot_color = "bisque"
+        fg_color = "coral"
+        bg_color = "coral"
+    elif 18 <= time_of_day < 20:
+        plot_color = "lightpink"
+        fg_color = "slateblue"
+        bg_color = "slateblue"
+    else:
+        plot_color = "royalblue"
+        fg_color = "black"
+        bg_color = "black"
+    return plot_color, fg_color, bg_color
+
+
+def visualize_hourly_weather(hourly_dataframe, canvas, local_time):
     fig, axs = plt.subplots(3, 2, figsize=(12, 8))
 
-    plot_color = "peru"
-    fg_color = "black"
-    bg_color = "black"
+    plot_color, fg_color, bg_color = get_color_gradient(local_time.hour)
 
     fig.patch.set_facecolor(bg_color)
     axs[0, 0].plot(
@@ -264,11 +287,10 @@ def visualize_hourly_weather(hourly_dataframe, canvas):
     axs[2, 0].tick_params(axis="y", colors=plot_color)
     axs[2, 0].grid(True, color=plot_color)
 
-    axs[2, 1].axis("off")  # Empty subplot for better layout
+    axs[2, 1].axis("off")
 
     fig.tight_layout()
 
-    # Clear previous plots
     for widget in canvas.winfo_children():
         widget.destroy()
 
@@ -276,10 +298,14 @@ def visualize_hourly_weather(hourly_dataframe, canvas):
     canvas_agg.draw()
     canvas_agg.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
-    # Bind subplot clicks to new window plot function
     def on_click(event, ax, title, ylabel):
         if event.inaxes == ax:
-            plot_in_new_window(hourly_dataframe, title, "Date", ylabel)
+            plot_in_new_window(
+                hourly_dataframe,
+                title,
+                "Date",
+                ylabel,
+                local_time)
 
     fig.canvas.mpl_connect(
         "button_press_event",
@@ -302,7 +328,8 @@ def visualize_hourly_weather(hourly_dataframe, canvas):
     fig.canvas.mpl_connect(
         "button_press_event",
         lambda event: on_click(
-            event, axs[1, 1], "Hourly Rain Variation", "rain"),
+            event, axs[1, 1], "Hourly Rain Variation", "rain"
+            ),
     )
     fig.canvas.mpl_connect(
         "button_press_event",
@@ -314,36 +341,41 @@ def visualize_hourly_weather(hourly_dataframe, canvas):
 
 # Display Data
 def display_weather_info(city_entry, weather_text, canvas):
-    """Fetch and display weather information for the selected city."""
     city_name = city_entry.get()
     latitude, longitude = get_city_coordinates(city_name)
     if latitude is None or longitude is None:
         return
 
     response = fetch_weather_data(latitude, longitude)
+    local_time = get_local_time(response)
 
+    weather_text.configure(state="normal")
     weather_text.delete(1.0, tk.END)
     weather_text.insert(tk.END, f"City Name: {city_name}\n")
     weather_text.insert(tk.END, f"Coordinates: {latitude}°N, {longitude}°E\n")
     weather_text.insert(tk.END, f"Elevation: {response.Elevation()} m asl\n")
     weather_text.insert(
-        tk.END, f"Timezone: {response.Timezone()} {response.TimezoneAbbreviation()}\n"
-    )
+        tk.END,
+        f"Timezone: {response.Timezone()} {response.TimezoneAbbreviation()}\n")
+    weather_text.configure(state="disabled")
 
     hourly_dataframe = process_hourly_data(response, city_name)
     daily_dataframe = process_daily_data(response, city_name)
 
     store_hourly_data(hourly_dataframe)
     store_daily_data(daily_dataframe)
-    visualize_hourly_weather(hourly_dataframe, canvas)
+    visualize_hourly_weather(hourly_dataframe, canvas, local_time)
 
 
 # GUI
 def create_gui(fetch_weather_callback):
-    """Create the GUI for the weather application."""
     root = tk.CTk()
     root.title("Weather App")
     root._state_before_windows_set_titlebar_color = "zoomed"
+
+    current_hour = datetime.now().hour
+    sky_color = get_sky_color(current_hour)
+    root.configure(bg=sky_color)
 
     myfont = tk.CTkFont(family="Calibri", size=20)
 
@@ -390,12 +422,22 @@ def create_gui(fetch_weather_callback):
         border_color="orange",
         border_width=2,
     )
-    weather_text.grid(row=1, column=1, columnspan=2,
-                      padx=5, pady=5, sticky="nsew")
+    weather_text.grid(
+        row=1,
+        column=1,
+        columnspan=2,
+        padx=5,
+        pady=5,
+        sticky="nsew")
 
     canvas_frame = tk.CTkFrame(root, width=800, height=600)
-    canvas_frame.grid(row=2, column=1, columnspan=2,
-                      padx=5, pady=5, sticky="nsew")
+    canvas_frame.grid(
+        row=2,
+        column=1,
+        columnspan=2,
+        padx=5,
+        pady=5,
+        sticky="nsew")
 
     root.grid_rowconfigure(2, weight=1)
     root.grid_columnconfigure(1, weight=1)
@@ -403,17 +445,11 @@ def create_gui(fetch_weather_callback):
 
     root.bind("<Escape>", lambda event: root.destroy())
 
-    current_hour = datetime.now().hour
-    sky_color = get_sky_color(current_hour)
-    root.configure(bg=sky_color)
-
     return root, city_entry, weather_text, canvas_frame
 
 
 # Main
 def main():
-    """Main function to run the GUI application."""
-
     root, city_entry, weather_text, canvas_frame = create_gui(
         lambda: display_weather_info(city_entry, weather_text, canvas_frame)
     )
