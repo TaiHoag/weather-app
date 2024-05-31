@@ -113,15 +113,62 @@ def store_daily_data(daily_dataframe):
 
 # Analysis Functions
 def analyze_data(data, column):
+    mean_val = data[column].mean()
+    median_val = data[column].median()
+    max_val = data[column].max()
+    min_val = data[column].min()
+    std_val = data[column].std()
+    range_val = max_val - min_val
+    q1 = data[column].quantile(0.25)
+    q3 = data[column].quantile(0.75)
+    iqr = q3 - q1
+
+    peaks = data[data[column] > (mean_val + std_val)]
+    troughs = data[data[column] < (mean_val - std_val)]
+
     analysis_report = f"""
     Analysis for {column.replace('_', ' ').title()}:
-    - Mean: {data[column].mean():.2f}
-    - Median: {data[column].median():.2f}
-    - Max: {data[column].max():.2f}
-    - Min: {data[column].min():.2f}
-    - Std Dev: {data[column].std():.2f}
+    - Mean: {mean_val:.2f}
+    - Median: {median_val:.2f}
+    - Max: {max_val:.2f}
+    - Min: {min_val:.2f}
+    - Std Dev: {std_val:.2f}
+    - Range: {range_val:.2f}
+    - Interquartile Range (IQR): {iqr:.2f}
+    - Number of Peaks: {len(peaks)}
+    - Number of Troughs: {len(troughs)}
     """
     return analysis_report
+
+
+def generate_weather_description(hourly_dataframe):
+    descriptions = []
+    temp_mean = hourly_dataframe["temperature_2m"].mean()
+    humidity_mean = hourly_dataframe["relative_humidity_2m"].mean()
+    precip_sum = hourly_dataframe["precipitation"].sum()
+    cloud_cover_mean = hourly_dataframe["cloud_cover"].mean()
+
+    descriptions.append(
+        f"The average temperature over the past hours was {temp_mean:.2f}°C.")
+    descriptions.append(
+        f"Average relative humidity was around {humidity_mean:.2f}%.")
+    if precip_sum > 0:
+        descriptions.append(
+            f"There was a total of {precip_sum:.2f} mm of precipitation.")
+    else:
+        descriptions.append("No precipitation was recorded.")
+    descriptions.append(f"Average cloud cover was {cloud_cover_mean:.2f}%.")
+
+    if temp_mean > 30:
+        descriptions.append("It has been quite hot.")
+    elif temp_mean < 10:
+        descriptions.append("It has been quite cold.")
+    if humidity_mean > 70:
+        descriptions.append("Humidity has been high.")
+    if cloud_cover_mean > 70:
+        descriptions.append("It has been mostly cloudy.")
+
+    return "\n".join(descriptions)
 
 
 # Calculate Local Time of City
@@ -166,10 +213,8 @@ def plot_in_new_window(data, title, xlabel, ylabel, local_time):
     text_box = tk.CTkTextbox(
         new_window,
         width=100,
-        height=50,
-        font=(
-            "Calibri",
-            20))
+        height=100,
+        font=("Calibri", 20))
     text_box.insert(tk.END, analysis_report)
     text_box.configure(state="disabled")
     text_box.pack(fill=tk.BOTH, expand=True)
@@ -291,12 +336,9 @@ def visualize_hourly_weather(hourly_dataframe, canvas, local_time):
 
     fig.tight_layout()
 
-    for widget in canvas.winfo_children():
-        widget.destroy()
-
-    canvas_agg = FigureCanvasTkAgg(fig, canvas)
-    canvas_agg.draw()
-    canvas_agg.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+    canvas = FigureCanvasTkAgg(fig, canvas)
+    canvas.draw()
+    canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
     def on_click(event, ax, title, ylabel):
         if event.inaxes == ax:
@@ -329,7 +371,7 @@ def visualize_hourly_weather(hourly_dataframe, canvas, local_time):
         "button_press_event",
         lambda event: on_click(
             event, axs[1, 1], "Hourly Rain Variation", "rain"
-            ),
+        ),
     )
     fig.canvas.mpl_connect(
         "button_press_event",
@@ -338,9 +380,10 @@ def visualize_hourly_weather(hourly_dataframe, canvas, local_time):
         ),
     )
 
-
 # Display Data
-def display_weather_info(city_entry, weather_text, canvas):
+
+
+def display_weather_info(city_entry, weather_text, description_text, canvas):
     city_name = city_entry.get()
     latitude, longitude = get_city_coordinates(city_name)
     if latitude is None or longitude is None:
@@ -354,9 +397,7 @@ def display_weather_info(city_entry, weather_text, canvas):
     weather_text.insert(tk.END, f"City Name: {city_name}\n")
     weather_text.insert(tk.END, f"Coordinates: {latitude}°N, {longitude}°E\n")
     weather_text.insert(tk.END, f"Elevation: {response.Elevation()} m asl\n")
-    weather_text.insert(
-        tk.END,
-        f"Timezone: {response.Timezone()} {response.TimezoneAbbreviation()}\n")
+    weather_text.insert(tk.END, f"Timezone: {response.Timezone()} {response.TimezoneAbbreviation()}\n")
     weather_text.configure(state="disabled")
 
     hourly_dataframe = process_hourly_data(response, city_name)
@@ -366,6 +407,11 @@ def display_weather_info(city_entry, weather_text, canvas):
     store_daily_data(daily_dataframe)
     visualize_hourly_weather(hourly_dataframe, canvas, local_time)
 
+    weather_description = generate_weather_description(hourly_dataframe)
+    description_text.configure(state="normal")
+    description_text.delete(1.0, tk.END)
+    description_text.insert(tk.END, weather_description)
+    description_text.configure(state="disabled")
 
 # GUI
 def create_gui(fetch_weather_callback):
@@ -382,16 +428,12 @@ def create_gui(fetch_weather_callback):
     city_names = get_all_city_names()
 
     combobox_var = tk.StringVar(value="")
-    city_entry = tk.CTkComboBox(
-        root, width=250, values=city_names, variable=combobox_var
-    )
+    city_entry = tk.CTkComboBox(root, width=250, values=city_names, variable=combobox_var)
     city_entry.grid(row=0, column=1, padx=5, pady=5, sticky="nsew")
 
     def checkkey(event):
         value = city_entry.get()
-        city_list = [
-            city for city in city_names if city.lower().startswith(value.lower())
-        ][:5]
+        city_list = [city for city in city_names if city.lower().startswith(value.lower())][:5]
         update_suggestions(city_list)
 
     def update_suggestions(city_list):
@@ -422,22 +464,22 @@ def create_gui(fetch_weather_callback):
         border_color="orange",
         border_width=2,
     )
-    weather_text.grid(
-        row=1,
-        column=1,
-        columnspan=2,
-        padx=5,
-        pady=5,
-        sticky="nsew")
+    weather_text.grid(row=1, column=1, padx=5, pady=5, sticky="nsew")
+
+    description_text = tk.CTkTextbox(
+        root,
+        font=myfont,
+        width=200,
+        height=150,
+        scrollbar_button_color="orange",
+        corner_radius=16,
+        border_color="orange",
+        border_width=2,
+    )
+    description_text.grid(row=1, column=2, padx=5, pady=5, sticky="nsew")
 
     canvas_frame = tk.CTkFrame(root, width=800, height=600)
-    canvas_frame.grid(
-        row=2,
-        column=1,
-        columnspan=2,
-        padx=5,
-        pady=5,
-        sticky="nsew")
+    canvas_frame.grid(row=2, column=1, columnspan=2, padx=5, pady=5, sticky="nsew")
 
     root.grid_rowconfigure(2, weight=1)
     root.grid_columnconfigure(1, weight=1)
@@ -445,16 +487,14 @@ def create_gui(fetch_weather_callback):
 
     root.bind("<Escape>", lambda event: root.destroy())
 
-    return root, city_entry, weather_text, canvas_frame
-
+    return root, city_entry, weather_text, description_text, canvas_frame
 
 # Main
 def main():
-    root, city_entry, weather_text, canvas_frame = create_gui(
-        lambda: display_weather_info(city_entry, weather_text, canvas_frame)
+    root, city_entry, weather_text, description_text, canvas_frame = create_gui(
+        lambda: display_weather_info(city_entry, weather_text, description_text, canvas_frame)
     )
     root.mainloop()
-
 
 if __name__ == "__main__":
     main()
