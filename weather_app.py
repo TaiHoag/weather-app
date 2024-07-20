@@ -397,7 +397,9 @@ def display_weather_info(city_entry, weather_text, description_text, canvas):
     weather_text.insert(tk.END, f"City Name: {city_name}\n")
     weather_text.insert(tk.END, f"Coordinates: {latitude}°N, {longitude}°E\n")
     weather_text.insert(tk.END, f"Elevation: {response.Elevation()} m asl\n")
-    weather_text.insert(tk.END, f"Timezone: {response.Timezone()} {response.TimezoneAbbreviation()}\n")
+    weather_text.insert(
+        tk.END,
+        f"Timezone: {response.Timezone()} {response.TimezoneAbbreviation()}\n")
     weather_text.configure(state="disabled")
 
     hourly_dataframe = process_hourly_data(response, city_name)
@@ -414,6 +416,8 @@ def display_weather_info(city_entry, weather_text, description_text, canvas):
     description_text.configure(state="disabled")
 
 # GUI
+
+
 def create_gui(fetch_weather_callback):
     root = tk.CTk()
     root.title("Weather App")
@@ -428,12 +432,17 @@ def create_gui(fetch_weather_callback):
     city_names = get_all_city_names()
 
     combobox_var = tk.StringVar(value="")
-    city_entry = tk.CTkComboBox(root, width=250, values=city_names, variable=combobox_var)
+    city_entry = tk.CTkComboBox(
+        root,
+        width=250,
+        values=city_names,
+        variable=combobox_var)
     city_entry.grid(row=0, column=1, padx=5, pady=5, sticky="nsew")
 
     def checkkey(event):
         value = city_entry.get()
-        city_list = [city for city in city_names if city.lower().startswith(value.lower())][:5]
+        city_list = [city for city in city_names if city.lower(
+        ).startswith(value.lower())][:5]
         update_suggestions(city_list)
 
     def update_suggestions(city_list):
@@ -479,7 +488,13 @@ def create_gui(fetch_weather_callback):
     description_text.grid(row=1, column=2, padx=5, pady=5, sticky="nsew")
 
     canvas_frame = tk.CTkFrame(root, width=800, height=600)
-    canvas_frame.grid(row=2, column=1, columnspan=2, padx=5, pady=5, sticky="nsew")
+    canvas_frame.grid(
+        row=2,
+        column=1,
+        columnspan=2,
+        padx=5,
+        pady=5,
+        sticky="nsew")
 
     root.grid_rowconfigure(2, weight=1)
     root.grid_columnconfigure(1, weight=1)
@@ -490,11 +505,14 @@ def create_gui(fetch_weather_callback):
     return root, city_entry, weather_text, description_text, canvas_frame
 
 # Main
+
+
 def main():
     root, city_entry, weather_text, description_text, canvas_frame = create_gui(
-        lambda: display_weather_info(city_entry, weather_text, description_text, canvas_frame)
-    )
+        lambda: display_weather_info(
+            city_entry, weather_text, description_text, canvas_frame))
     root.mainloop()
+
 
 if __name__ == "__main__":
     main()
